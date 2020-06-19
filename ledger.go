@@ -21,12 +21,12 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/zondax/hid"
+	"github.com/inc-backend/hid"
 )
 
 const (
-	VendorLedger         = 0x2c97
-	UsagePageLedgerNanoS = 0xffa0
+	VendorLedger    = 0x2c97
+	UsagePageLedger = 0xffa0
 	//ProductNano     = 1
 	Channel    = 0x0101
 	PacketSize = 64
@@ -39,7 +39,7 @@ type Ledger struct {
 	Logging     bool
 }
 
-func newLedger(dev *hid.Device) *Ledger {
+func NewLedger(dev *hid.Device) *Ledger {
 	return &Ledger{
 		device:  *dev,
 		Logging: false,
@@ -67,52 +67,22 @@ func ListDevices() {
 	}
 }
 
-func isLedgerDevice(d hid.DeviceInfo) bool {
-	deviceFound := d.UsagePage == UsagePageLedgerNanoS
-	// Workarounds for possible empty usage pages
-	return deviceFound ||
-		(d.Product == "Nano S" && d.Interface == 0) ||
-		(d.Product == "Nano X" && d.Interface == 0)
-}
-
-func CountLedgerDevices() uint {
-	devices := hid.Enumerate(0, 0)
-
-	count := uint(0)
-	for _, d := range devices {
-		if isLedgerDevice(d) {
-			count++
-		}
-	}
-
-	return count
-}
-
 func FindLedger() (*Ledger, error) {
-	return GetLedger(0)
-}
-
-func GetLedger(requiredIndex uint) (*Ledger, error) {
 	devices := hid.Enumerate(VendorLedger, 0)
 
-	currentIndex := uint(0)
 	for _, d := range devices {
-		if isLedgerDevice(d) {
-			if currentIndex == requiredIndex {
-				device, err := d.Open()
-				if err != nil {
-					return nil, err
-				}
-				return newLedger(device), nil
-			}
-			currentIndex++
-			if currentIndex > requiredIndex {
-				break
+		deviceFound := d.UsagePage == UsagePageLedger
+		deviceFound = deviceFound || (d.Product == "Nano S" && d.Interface == 0)
+
+		if deviceFound {
+			device, err := d.Open()
+			if err == nil {
+				return NewLedger(device), nil
 			}
 		}
 	}
 
-	return nil, fmt.Errorf("Ledger device (idx %d) not found", requiredIndex)
+	return nil, errors.New("no ledger connected")
 }
 
 func ErrorMessage(errorCode uint16) string {
@@ -232,9 +202,6 @@ func (ledger *Ledger) Exchange(command []byte) ([]byte, error) {
 	readChannel := ledger.Read()
 
 	response, err := UnwrapResponseAPDU(Channel, readChannel, PacketSize)
-	if err != nil {
-		return nil, err
-	}
 
 	if len(response) < 2 {
 		return nil, fmt.Errorf("len(response) < 2")
