@@ -1,5 +1,5 @@
 [[constraint]]
-  name = "github.com/inc-backend/hid"
+  name = "github.com/incognito-core-libs/hid"
   version = "0.9.1"
 
 [[constraint]]
@@ -14,5 +14,5 @@
   go-tests = true
   unused-packages = true
   [[prune.project]]
-      name = "github.com/inc-backend/hid"
+      name = "github.com/incognito-core-libs/hid"
       unused-packages = false

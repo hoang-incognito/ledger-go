@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/inc-backend/hid"
+	"github.com/incognito-core-libs/hid"
 )
 
 const (
